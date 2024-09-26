@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<MISLIBRERIAS>
+    <Libreria>
+        <nombre>Prueba de libreria 1 JAXB</nombre>
+        <lugar>Talavera, como no</lugar>
+        <MiListaLibros>
+            <Libro>
+                <nombre>Entornos de Desarrollo</nombre>
+                <autor>Alicia Ramos</autor>
+                <editorial>Garceta</editorial>
+                <isbn>978-84-1545-297-3</isbn>
+            </Libro>
+            <Libro>
+                <nombre>Acceso a Datos</nombre>
+                <autor>Maria Jesús Ramos</autor>
+                <editorial>Garceta</editorial>
+                <isbn>978-84-1545-228-7</isbn>
+            </Libro>
+        </MiListaLibros>
+    </Libreria>
+    <Libreria>
+        <nombre>Prueba de libreria 2 JAXB</nombre>
+        <lugar>Madrid</lugar>
+        <MiListaLibros>
+            <Libro>
+                <nombre>Programacion</nombre>
+                <autor>Aaaa</autor>
+                <editorial>Garceta</editorial>
+                <isbn>978-84-1545-221-1</isbn>
+            </Libro>
+            <Libro>
+                <nombre>Sistemas Informaticos</nombre>
+                <autor>Maria José</autor>
+                <editorial>Editoriaaal</editorial>
+                <isbn>978-84-1545-228-0</isbn>
+            </Libro>
+            <Libro>
+                <nombre>Bases de Datos</nombre>
+                <autor>Pepe</autor>
+                <editorial>Garceta</editorial>
+                <isbn>978-84-1545-222-2</isbn>
+            </Libro>
+        </MiListaLibros>
+    </Libreria>
+</MISLIBRERIAS>
