@@ -26,7 +26,7 @@ public class Principal {
 		    		numAlumnos++;
 		    		mediaTotal+=a.getNotaMedia();
 		    	}
-		    	mediaTotal=(double)Math.round((mediaTotal/numAlumnos)*100)/100;
+		    	if (numAlumnos>0) mediaTotal=(double)Math.round((mediaTotal/numAlumnos)*100)/100; //Calculamos la media solo si hay alumnos. Multiplicar y dividir por 100 en ese orden sirve para redondear con 2 decimales
 		    	System.out.printf("%10s %-20s %10s %n"," ","--------------------", "----------");
 		    	System.out.printf("%10s %-20s %10s %n"," ","MEDIA TOTAL", mediaTotal);
 		    	System.out.println();
