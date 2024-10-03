@@ -335,6 +335,7 @@ public class Principal {
 						ArrayList<Venta>ventas=obtenerVentasProducto(codigo, precio); //Obtenemos el ArrayList de ventas, que lo devuelve este metodo
 						
 						productos.add(new Producto2(codigo,nombre,existencias,precio,ventas)); //Creamos un departamento con los datos leidos y lo guardamos en la lista
+						System.out.println("Codigo de producto: "+codigo+" Numero de ventas: "+ventas.size());
 					}
 					posicion= posicion + FILESIZE_PRODUCTOS; //Actualizamos la posicion
 				    if (file.getFilePointer()==file.length() || posicion>=file.length())seguirLeyendo=false; //posicion >=file.length() se hace por si no se lee un dato para que no de EOFException, pues el puntero no leeria ese dato y no llegaria al final
