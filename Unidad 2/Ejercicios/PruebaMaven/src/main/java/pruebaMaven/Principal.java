@@ -35,11 +35,16 @@ public class Principal {
 						consultardepartamentos(conexion);
 						break;
 					case 5:
-						Class.forName("com.mysql.jdbc.Driver");
+						Class.forName("oracle.jdbc.driver.OracleDriver");
 						conexion = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:XE", "ejemplo", "dam"); 
 						consultardepartamentos(conexion);
 						break;
 					case 6:
+						Class.forName("org.mariadb.jdbc.Driver");
+						conexion = DriverManager.getConnection("jdbc:mariadb://localhost:3306/ejemplo", "root", "1234"); 
+						consultardepartamentos(conexion);
+						break;
+					case 7:
 						salir=true;
 						break;
 					default:
@@ -47,9 +52,9 @@ public class Principal {
 						break;
 				}
 			}while(!salir);
-	}catch(Exception e) {
-		e.printStackTrace();
-	}
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 	private static void menu() {
 		System.out.println("");
@@ -59,7 +64,8 @@ public class Principal {
 		System.out.println("3. Prueba HSQLDB");
 		System.out.println("4. Prueba SQLite");
 		System.out.println("5. Prueba Oracle");
-		System.out.println("6. Salir");
+		System.out.println("6. Prueba MariaDB");
+		System.out.println("7. Salir");
 		System.out.println("");
 	}
 	private static void consultardepartamentos(Connection conexion) throws SQLException {

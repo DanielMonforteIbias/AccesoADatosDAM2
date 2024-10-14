@@ -12,5 +12,6 @@
 	<classpathentry kind="lib" path="C:/Users/Tarde/eclipse-workspace/Acceso a Datos/Unidad 2/Conectores/ojdbc8.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Tarde/eclipse-workspace/Acceso a Datos/Unidad 2/Conectores/sqlite-jdbc-3.46.1.3.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Tarde/eclipse-workspace/Acceso a Datos/Unidad 2/Conectores/mysql-connector-java-8.0.30.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Tarde/eclipse-workspace/Acceso a Datos/Unidad 2/Conectores/mariadb-java-client-3.4.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
