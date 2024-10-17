@@ -108,10 +108,10 @@ public class Principal extends JFrame {
 		});
 		table.setModel(new DefaultTableModel(
 			new Object[][] {
-				{"", null, null, null, null},
-				{null, "", null, null, null},
-				{"", null, null, null, null},
-				{null, null, "", "", null},
+				{null, null, null, null, null},
+				{null, null, null, null, null},
+				{null, null, null, null, null},
+				{null, null, null, null, null},
 				{null, null, null, null, null},
 				{null, null, null, null, null},
 			},
