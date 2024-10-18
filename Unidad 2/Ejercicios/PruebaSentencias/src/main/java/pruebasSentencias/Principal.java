@@ -6,6 +6,18 @@ public class Principal {
 	public static void main(String[] args) {
 		Connection conexion=Conexiones.getMySQL("ejemplo", "root","1234");
 		System.out.println("PRUEBA VER EMPLEADOS MYSQL");
+		//ERROR EN EMPLEADO, DIRECTOR, DEP, APELLIDO, OFICIO Y SALARIO
+		System.out.println(insertarEmpleado(conexion,7369,"","",222,-1500,100,45));
+		//ERROR EN EMPLEADO Y APELLIDO
+		System.out.println(insertarEmpleado(conexion,7369,"","INFORMATICO",7499,1500,100,10));
+		//ERROR EN DEP Y OFICIO
+		System.out.println(insertarEmpleado(conexion,123,"EMPLE123","",7499,1500,100,45));
+		//DATOS OK
+		System.out.println(insertarEmpleado(conexion,122,"EMPLE123","INFORMATICO",7499,1500,100,10));
+	}
+	public static void mainVerEmpleados(String[] args) {
+		Connection conexion=Conexiones.getMySQL("ejemplo", "root","1234");
+		System.out.println("PRUEBA VER EMPLEADOS MYSQL");
 		verempleadosdep(conexion, 10);
 		
 		conexion=Conexiones.getDerby("basesdatos/derby/ejemplo.db");
@@ -96,6 +108,74 @@ public class Principal {
 		return mensaje;
 	}
 	
+	public static String insertarEmpleado(Connection conexion, int emp_no, String apellido, String oficio, int director, float salario, float comision, int dept_no) {
+		String mensaje="";
+		boolean error=false;
+		String sql="select count(*) from empleados where emp_no="+emp_no;
+		try {
+			//COMPROBACIONES
+			//Comprobar si el empleado existe
+			Statement sentencia = conexion.createStatement();
+			ResultSet resul=sentencia.executeQuery(sql);
+			resul.next(); //Nos posicionamos en la fila que devuelve
+			int cuenta=resul.getInt(1);
+			if (cuenta==1) { //Si el contador es 1, el empleado existe
+				mensaje+="EL NUM DE EMPLEADO "+emp_no+" YA EXISTE, ERROR AL INSERTAR.\n";
+				error=true;
+			}
+			//Comprobar si el director existe
+			sql="select count(*) from empleados where emp_no="+director;
+			sentencia = conexion.createStatement();
+			resul=sentencia.executeQuery(sql);
+			resul.next(); //Nos posicionamos en la fila que devuelve
+			cuenta=resul.getInt(1);
+			if (cuenta==0) { //Si el contador es 1, el director existe
+				mensaje+="EL DIRECTOR "+director+" NO EXISTE EN EMPLEADOS, ERROR AL INSERTAR.\n";
+				error=true;
+			}
+			//Comprobar si el departamento existe
+			sql="select count(*) from departamentos where dept_no="+dept_no;
+			sentencia = conexion.createStatement();
+			resul=sentencia.executeQuery(sql);
+			resul.next(); //Nos posicionamos en la fila que devuelve
+			cuenta=resul.getInt(1);
+			if (cuenta==0) { //Si el contador es 0, el departamento no existe
+				mensaje+="EL NUM DE DEPARTAMENTO "+dept_no+" NO EXISTE EN LA TABLA DEPARTAMENTOS.\n";
+				error=true;
+			}
+			//Otras comprobaciones
+			if (salario<0) {
+				mensaje+="EL SALARIO ES NEGATIVO, ERROR NO PUEDE SER NEGATIVO.\n";
+				error=true;
+			}
+			if (apellido.equals("")||apellido==null) {
+				mensaje+="EL APELLIDO NO PUEDE SER NULO.\n";
+				error=true;
+			}
+			if (oficio.equals("")||oficio==null) {
+				mensaje+="EL OFICIO NO PUEDE SER NULO.\n";
+				error=true;
+			}
+			//FIN COMPROBACIONES
+			if (!error) { //Si no hay error, se inserta
+				 mensaje+=insertarEmple(conexion,emp_no,apellido,oficio,director,salario,comision,dept_no);
+			}
+			else mensaje+="REGISTRO NO INSERTADO"; //Si hay error, no se inserta
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return mensaje;
+		
+		
+	}
+	public static String insertarEmple(Connection conexion, int emp_no, String apellido, String oficio, int director, float salario, float comision, int dept_no) {
+		String mensaje="";
+		java.util.Date utilDate=new java.util.Date();
+		java.sql.Date sqlDate=new java.sql.Date(utilDate.getTime());
+		System.out.println(utilDate);
+		System.out.println(sqlDate);
+		return mensaje;
+	}
 	public static void verempleadosdep(Connection conexion, int dept) {
 		try {
 			String sql = "select emp_no, apellido, oficio, salario from empleados where dept_no = " + dept;
