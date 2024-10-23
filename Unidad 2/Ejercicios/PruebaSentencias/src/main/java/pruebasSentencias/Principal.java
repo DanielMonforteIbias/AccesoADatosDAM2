@@ -3,17 +3,45 @@ package pruebasSentencias;
 import java.sql.*;
 
 public class Principal {
-	public static void main(String[] args) {
+	public static void main(String[] args) throws SQLException {
 		Connection conexion=Conexiones.getMySQL("ejemplo", "root","1234");
-		System.out.println("PRUEBA VER EMPLEADOS MYSQL");
-		//ERROR EN EMPLEADO, DIRECTOR, DEP, APELLIDO, OFICIO Y SALARIO
-		System.out.println(insertarEmpleado(conexion,7369,"","",222,-1500,100,45));
-		//ERROR EN EMPLEADO Y APELLIDO
-		System.out.println(insertarEmpleado(conexion,7369,"","INFORMATICO",7499,1500,100,10));
-		//ERROR EN DEP Y OFICIO
-		System.out.println(insertarEmpleado(conexion,123,"EMPLE123","",7499,1500,100,45));
-		//DATOS OK
-		System.out.println(insertarEmpleado(conexion,122,"EMPLE123","INFORMATICO",7499,1500,100,10));
+		//Connection conexion=Conexiones.getOracle("EJEMPLO", "dam");
+		//Connection conexion=Conexiones.getSQLite("basesdatos/sqlite/ejemplo.db");
+		if(conexion!=null) {
+			visualizarEmpleadosDepartamento(conexion, 10); //Existe
+			System.out.println();
+			visualizarEmpleadosDepartamento(conexion, 99); //No existe
+			System.out.println();
+			visualizarEmpleadosDepartamento(conexion, 40); //Existe sin empleados
+		}
+		else {
+			System.out.println("ERROR EN LA CONEXION");
+		}
+		conexion.close();
+	}
+	
+	public static void mainPruebasInsertar(String[] args) throws SQLException {
+		Connection conexion=Conexiones.getMySQL("ejemplo", "root","1234");
+		//Connection conexion=Conexiones.getOracle("EJEMPLO", "dam");
+		//Connection conexion=Conexiones.getSQLite("basesdatos/sqlite/ejemplo.db");
+		if(conexion!=null) {
+			System.out.println("PRUEBA VER EMPLEADOS MYSQL");
+			//ERROR EN EMPLEADO, DIRECTOR, DEP, APELLIDO, OFICIO Y SALARIO
+			System.out.println(insertarEmpleado(conexion,7369,"","",222,-1500,100,45));
+			//ERROR EN EMPLEADO Y APELLIDO
+			System.out.println(insertarEmpleado(conexion,7369,"","INFORMATICO",7499,1500,100,10));
+			//ERROR EN DEP Y OFICIO
+			System.out.println(insertarEmpleado(conexion,123,"EMPLE123","",7499,1500,100,45));
+			//DATOS OK
+			System.out.println(insertarEmpleado(conexion,122,"EMPLE123","INFORMATICO",7499,1500,100,10));
+			System.out.println(insertarEmpleado(conexion,124,"EMPLE124","INFORMATICO",7499,1800,100,10));
+			System.out.println(insertarEmpleado(conexion,125,"EMPLE125","INFORMATICO",7499,1600,100,10));
+			System.out.println(insertarEmpleado(conexion,126,"EMPLE126","INFORMATICO",7499,1800,100,10));
+		}
+		else {
+			System.out.println("ERROR EN LA CONEXION");
+		}
+		conexion.close();
 	}
 	public static void mainVerEmpleados(String[] args) {
 		Connection conexion=Conexiones.getMySQL("ejemplo", "root","1234");
@@ -168,12 +196,38 @@ public class Principal {
 		
 		
 	}
-	public static String insertarEmple(Connection conexion, int emp_no, String apellido, String oficio, int director, float salario, float comision, int dept_no) {
+	public static String insertarEmple(Connection conexion, int emp_no, String apellido, String oficio, int director, float salario, float comision, int dept_no) { //ACTIVIDAD 2_10
 		String mensaje="";
 		java.util.Date utilDate=new java.util.Date();
 		java.sql.Date sqlDate=new java.sql.Date(utilDate.getTime());
 		System.out.println(utilDate);
 		System.out.println(sqlDate);
+		
+		String insert="INSERT INTO EMPLEADOS VALUES ("+emp_no+",'"+apellido+"','"+oficio+"',"+director+",'"+sqlDate+"',"+salario+","+comision+","+dept_no+")";
+		System.out.println(insert);
+		String sql= "INSERT INTO EMPLEADOS VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
+
+		try {
+			//Statement sentencia = conexion.createStatement();
+			//int filas=sentencia.executeUpdate(insert);
+			
+			PreparedStatement sentencia =  conexion.prepareStatement(sql);
+			sentencia.setInt(1, emp_no); // num empleado
+			sentencia.setString(2, apellido); //Apellido
+			sentencia.setString(3, oficio); //Oficio
+			sentencia.setInt(4, director); //Director
+			sentencia.setDate(5, sqlDate); //Fecha
+			sentencia.setFloat(6, salario); //Salario
+			sentencia.setFloat(7, comision); //Comision
+			sentencia.setInt(8, dept_no); //Departamento
+
+			int filas = sentencia.executeUpdate();  // filas afectadas
+
+			mensaje="Empleado insertado: "+emp_no;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			mensaje="Error al insertar: "+e.getMessage();
+		}	
 		return mensaje;
 	}
 	public static void verempleadosdep(Connection conexion, int dept) {
@@ -191,5 +245,59 @@ public class Principal {
 		} catch (SQLException e) {
 			System.out.println("Código de error: " + e.getErrorCode() + "\nMensaje de error: " + e.getMessage());
 		}
+	}
+	public static void visualizarEmpleadosDepartamento(Connection conexion, int dept_no) { //Actividad 2_11
+		//Comprobar si el dep existe
+		String sql="SELECT dnombre FROM DEPARTAMENTOS WHERE dept_no = ?";
+		try {
+			PreparedStatement sentencia=conexion.prepareStatement(sql);
+			sentencia.setInt(1, dept_no);
+			ResultSet resul=sentencia.executeQuery();
+			if(resul.next()) {
+				String nombre=resul.getString(1);
+				System.out.println("EMPLEADOS DEL DEPARTAMENTO: "+nombre);
+				sql="select apellido, salario, oficio from empleados  where dept_no = ?";
+				sentencia=conexion.prepareStatement(sql);
+				sentencia.setInt(1, dept_no);
+				resul=sentencia.executeQuery();
+				if(resul.next()) {
+					System.out.printf("%15s %10s %15s %n","APELLIDO","SALARIO","OFICIO");
+					System.out.printf("%15s %10s %15s %n","---------------","----------","---------------");
+					//Recorrer el ResultSet
+					//CONTADOR SIN SELECT: int cuen=0;
+					//SUMA DE MEDIA SIN SELECT: float suma=0;
+					do{ //Se hace do while porque si se hace while nos saltaríamos un registro, pues ya hemos hecho un resul.next antes para comprobar si habia datos
+						System.out.printf("%15s %10s %15s %n",resul.getString(1),resul.getFloat(2),resul.getString(3));
+						//cuen++;
+						//suma+=resul.getFloat(2);
+					}while(resul.next());
+					System.out.printf("%15s %10s %15s %n","---------------","----------","---------------");
+					
+					//Totales con select
+					sql="select avg(salario), count(emp_no) from empleados  where dept_no = ?";
+					sentencia=conexion.prepareStatement(sql);
+					sentencia.setInt(1, dept_no);
+					resul=sentencia.executeQuery();
+					//Aquí ya sabemos que va a devolver datos asi que no hace falta comprobarlo
+					resul.next(); //Como devuelve solo una fila nos posicionamos
+					float media=resul.getFloat(1);
+					int cuenta=resul.getInt(2);
+					System.out.println("SALARIO MEDIO: "+media);
+					System.out.println("NUM EMPLEADOS: "+cuenta);
+					
+					//Totales con contadores
+					//System.out.println("SALARIO MEDIO: "+suma/cuen);
+					//System.out.println("NUM EMPLEADOS: "+cuen);
+				}
+				else System.out.println("DEPARTAMENTO SIN EMPLEADOS");
+			}
+			else System.out.println("DEPARTAMENTO NO EXISTE: "+dept_no);
+			resul.close();
+			sentencia.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	
+		
 	}
 }

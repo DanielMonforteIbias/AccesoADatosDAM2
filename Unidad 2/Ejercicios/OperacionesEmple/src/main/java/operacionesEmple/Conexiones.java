@@ -1,4 +1,4 @@
-package pruebasSentencias;
+package operacionesEmple;
 
 import java.sql.*;
 public class Conexiones {
