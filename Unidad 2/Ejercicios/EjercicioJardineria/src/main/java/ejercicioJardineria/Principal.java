@@ -27,12 +27,17 @@ public class Principal {
 					visualizarPedidosCliente(4); //Cliente existe con pedidos
 					break;
 				case 3:
+					crearClientesSinPedido();
 					break;
 				case 4:
+					clientesPorEmpleado();
 					break;
 				case 5:
+					crearStockActualizado();
 					break;
 				case 6:
+					ejercicioOficinas("BCN-ES"); //Existe
+					ejercicioOficinas("BCNNNN"); //No existe
 					break;
 				case 7:
 					break;
@@ -233,5 +238,103 @@ public class Principal {
 			e.printStackTrace();
 		}
 	}
-
+	private static void crearClientesSinPedido() {
+		//Crear tabla sin pedidos y con los clientes
+		String crear="create table clientessinpedido as select * from clientes where codigocliente not in (select codigocliente from pedidos) order by codigocliente";
+		//Añadir la PK a la tabla
+		String alter="alter table clientessinpedido add constraint csp_pk primary key (codigocliente)";
+		
+		//Borrar clientes
+		String borrar="delete from clientes where codigocliente not in (select codigocliente from pedidos)";
+		try {
+			//Crear tabla
+			PreparedStatement sentencia=conexion.prepareStatement(crear);
+			sentencia.executeUpdate();
+			System.out.println("-----------------------------");
+			System.out.println("Tabla clientessinpedido creada con los registros");
+			//Añadir PK
+			sentencia=conexion.prepareStatement(alter);
+			sentencia.executeUpdate();
+			System.out.println("Añadida la pk en clientessinpedido");
+			//Borrar de clientes
+			sentencia=conexion.prepareStatement(borrar);
+			int registrosBorrados=sentencia.executeUpdate();
+			System.out.println("Clientes sin pedido borrados de clientes: "+registrosBorrados);
+			
+			sentencia.close();
+		} catch (SQLException e) {
+			//e.printStackTrace();
+			System.out.println("Tabla CLIENTESSINPEDIDO ya creda y clientes borrados de CLIENTES");
+			
+		}
+		
+	}
+	private static void clientesPorEmpleado() {
+		String crearColumna="alter table empleados add numclientes number(5)";
+		String actualizar="update empleados emple set numclientes=(select count(*) from clientes where codigoempleadorepventas=emple.codigoempleado)";
+		PreparedStatement sentencia;
+		try {
+			//Crear columna
+			sentencia=conexion.prepareStatement(crearColumna);
+			sentencia.executeUpdate();
+			System.out.println("----------------------------------");
+			System.out.println("Columna creada");
+		}catch (SQLException e) {
+			//e.printStackTrace();
+			System.out.println("Atención error, comprueba si existe la columna: "+e.getMessage());
+		}
+		try {
+			//Actualizar columna
+			sentencia=conexion.prepareStatement(actualizar);
+			int numeroRegistros=sentencia.executeUpdate();
+			System.out.println("Columna actualizada. Registros: "+numeroRegistros);
+		}catch (SQLException e) {
+			//e.printStackTrace();
+			System.out.println("Atención error en la actualización: "+e.getMessage());
+		}
+	}
+	private static void crearStockActualizado() {
+		String crearColumna="alter table productos add stockactualizado number(5)";
+		
+		String actualizar="update productos p set stockactualizado=cantidadenstock-(select coalesce(sum(cantidad),0) from detallepedidos where codigoproducto=p.codigoproducto)";
+		
+		String consulta="select codigoproducto, cantidadenstock, stockactualizado from productos where stockactualizado<5";
+		
+		PreparedStatement sentencia;
+		try {
+			//Crear columna
+			sentencia=conexion.prepareStatement(crearColumna);
+			sentencia.executeUpdate();
+			System.out.println("----------------------------------");
+			System.out.println("Columna creada");
+		}catch (SQLException e) {
+			//e.printStackTrace();
+			System.out.println("Atención error, comprueba si existe la columna: "+e.getMessage());
+		}
+		try {
+			//Actualizar columna
+			sentencia=conexion.prepareStatement(actualizar);
+			int numeroRegistros=sentencia.executeUpdate();
+			System.out.println("Columna actualizada. Registros: "+numeroRegistros);
+		}catch (SQLException e) {
+			//e.printStackTrace();
+			System.out.println("Atención error en la actualización: "+e.getMessage());
+		}
+		try {
+			//Listar productos a reponer
+			sentencia=conexion.prepareStatement(consulta);
+			ResultSet resul=sentencia.executeQuery();
+			System.out.printf("%15s %15s %16s %n","COD PRODUCTO","CANTIDADENSTOCK","STOCKACTUALIZADO");
+			System.out.printf("%15s %15s %16s %n","---------------","---------------","----------------");
+			while(resul.next()) {
+				System.out.printf("%15s %15s %16s %n",resul.getString(1),resul.getInt(2),resul.getInt(3));
+			}
+		}catch (SQLException e) {
+			//e.printStackTrace();
+			System.out.println("Atención error en la consulta: "+e.getMessage());
+		}
+	}
+	private static void ejercicioOficinas(String codigoOficina) {
+		
+	}
 }
