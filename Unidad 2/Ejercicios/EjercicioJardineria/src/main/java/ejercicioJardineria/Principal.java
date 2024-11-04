@@ -1,10 +1,12 @@
 package ejercicioJardineria;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Scanner;
 
 public class Principal {
@@ -38,10 +40,13 @@ public class Principal {
 				case 6:
 					ejercicioOficinas("BCN-ES"); //Existe
 					ejercicioOficinas("BCNNNN"); //No existe
+					ejercicioOficinas("NUEVA"); //Existe sin empleados
 					break;
 				case 7:
+					verPedidosTodosClientes();
 					break;
 				case 8:
+					tratarNuevosEmpleados();
 					break;
 				case 0:
 					salir=true;
@@ -73,7 +78,7 @@ public class Principal {
 		System.out.println("....................................");
 		System.out.println("------------------------------------");
 	}
-	public static boolean comprobarEmpleado(Connection conexion, int codigoEmpleado) {
+	public static boolean comprobarEmpleado(int codigoEmpleado) {
 		boolean existe=false;
 		String sql="select * from empleados where codigoempleado = ?";
 		try {
@@ -89,7 +94,7 @@ public class Principal {
 		}
 		return existe;
 	}
-	public static boolean comprobarOficina(Connection conexion, String codigoOficina) {
+	public static boolean comprobarOficina(String codigoOficina) {
 		boolean existe=false;
 		String sql="select * from oficinas where codigooficina = ?";
 		try {
@@ -107,11 +112,11 @@ public class Principal {
 	}
 	public static void insertarEmpleado(String nombre, String apellido1, String apellido2, String extension, String email, String codigoOficina, int codigoJefe, String puesto) {
 		boolean insertar=true;
-		if(!comprobarEmpleado(conexion, codigoJefe)) { //Si no existe un empleado con el codigo del jefe
+		if(!comprobarEmpleado(codigoJefe)) { //Si no existe un empleado con el codigo del jefe
 			insertar=false; //No insertaremos
 			System.out.println("Empleado no insertado. El codigo de jefe no existe"); //Sacamos un mensaje
 		}
-		if(!comprobarOficina(conexion,codigoOficina)) { //Si no existe la oficina
+		if(!comprobarOficina(codigoOficina)) { //Si no existe la oficina
 			insertar=false; //No insertaremos
 			System.out.println("Empleado no insertado. El codigo de oficina no existe");
 		}
@@ -335,6 +340,165 @@ public class Principal {
 		}
 	}
 	private static void ejercicioOficinas(String codigoOficina) {
+		String sql="{ ? = call veroficina(?,?,?,?,?)}";
+		System.out.printf("%-12s %-30s %-50s %-50s %-50s %-10s %n","COD OFICINA","CIUDAD","PAIS","REGION","DIRECCION1","NUM EMPLES");
+		System.out.printf("%-12s %-30s %-50s %-50s %-50s %-10s %n","------------","------------------------------","--------------------------------------------------","--------------------------------------------------","--------------------------------------------------","----------");
+		try {
+			CallableStatement llamada=conexion.prepareCall(sql);
+			llamada.registerOutParameter(1, Types.INTEGER); //Contador
+			llamada.setString(2, codigoOficina); //Oficina
+			llamada.registerOutParameter(3,Types.VARCHAR);//ciudad
+			llamada.registerOutParameter(4,Types.VARCHAR);//pais
+			llamada.registerOutParameter(5,Types.VARCHAR);//region
+			llamada.registerOutParameter(6,Types.VARCHAR);//direccion1
+			//Ejecutar procedimiento
+			llamada.executeUpdate();
+			//Mostrar datos
+			System.out.printf("%-12s %-30s %-50s %-50s %-50s %-10s %n",codigoOficina,llamada.getString(3),llamada.getString(4),llamada.getString(5),llamada.getString(6),llamada.getInt(1));
+			
+			llamada.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	private static void verPedidosTodosClientes() {
+		String sql="select codigocliente from clientes order by codigocliente";
+		try {
+			PreparedStatement sentencia=conexion.prepareStatement(sql);
+			ResultSet resul=sentencia.executeQuery();
+			while(resul.next()) {
+				System.out.println("***");
+				visualizarPedidosCliente(resul.getInt(1));
+			}
+			resul.close();
+			sentencia.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		
+	}
+	private static void tratarNuevosEmpleados() {
+		String sql="select codigoempleado, nombre, apellido1, apellido2, extension, email, codigooficina, codigojefe, puesto from nuevosempleados";
+		try {
+			PreparedStatement sentencia=conexion.prepareStatement(sql);
+			ResultSet resul=sentencia.executeQuery();
+			while(resul.next()) {
+				//Comprobar si existe
+				String mensaje="";
+				boolean error=false;
+				int codigoEmpleado=resul.getInt(1);
+				if(!comprobarEmpleado(codigoEmpleado)) {
+					insertarEmple(resul);
+				}
+				if(comprobarEmpleado(codigoEmpleado)) {
+					actualizarEmple(resul);
+				}
+			}
+			resul.close();
+			sentencia.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	private static void insertarEmple(ResultSet resul) {
+		try {
+			boolean insertar=true;
+			String codigoOficina = resul.getString(7);
+			int codigoJefe=resul.getInt(8);
+			String mensaje="";
+			if(!comprobarEmpleado(codigoJefe)) { //Si no existe un empleado con el codigo del jefe
+				insertar=false; //No insertaremos
+				mensaje+=("Empleado no insertado. El codigo de jefe no existe "+codigoJefe+"\n"); //Sacamos un mensaje
+			}
+			if(!comprobarOficina(codigoOficina)) { //Si no existe la oficina
+				insertar=false; //No insertaremos
+				mensaje+=("Empleado no insertado. El codigo de oficina no existe: "+codigoOficina+"\n");
+			}
+
+			if (insertar) {//Si todo es correcto, insertamos
+				try {
+					//Obtenemos el maximo codigo de empleado y sumamos 1
+					String sql="insert into empleados (codigoempleado,nombre,apellido1,apellido2,extension,email,codigooficina,codigojefe,puesto) "
+							+ "values (?,?,?,?,?,?,?,?,?)";
+					PreparedStatement sentencia=conexion.prepareStatement(sql);
+					sentencia=conexion.prepareStatement(sql);
+					sentencia.setInt(1, resul.getInt(1));
+					sentencia.setString(2,resul.getString(2));
+					sentencia.setString(3, resul.getString(3));
+					sentencia.setString(4, resul.getString(4));
+					sentencia.setString(5, resul.getString(5));
+					sentencia.setString(6, resul.getString(6));
+					sentencia.setString(7, resul.getString(7));
+					sentencia.setInt(8, resul.getInt(8));
+					sentencia.setString(9, resul.getString(9));
+					int linea=sentencia.executeUpdate();
+					System.out.println("Empleado insertado: "+resul.getInt(1));
+					sentencia.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			else System.out.println("Error, no se inserta el empleado "+resul.getInt(1)+"\n"+mensaje);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	private static void actualizarEmple(ResultSet resul) {
+		try {
+			boolean actualizar=true;
+			String codigoOficina = resul.getString(7);
+			int codigoJefe=resul.getInt(8);
+			String mensaje="";
+			if(!comprobarEmpleado(codigoJefe)) { //Si no existe un empleado con el codigo del jefe
+				actualizar=false; //No insertaremos
+				mensaje+=("Empleado no actualizado. El codigo de jefe no existe "+codigoJefe+"\n"); //Sacamos un mensaje
+			}
+			if(!comprobarOficina(codigoOficina)) { //Si no existe la oficina
+				actualizar=false; //No insertaremos
+				mensaje+=("Empleado no actualizado. El codigo de oficina no existe: "+codigoOficina+"\n");
+			}
+
+			if (actualizar) {
+				String sql="select * from empleados where codigoempleado = ?";
+				PreparedStatement sentenciaEmple=conexion.prepareStatement(sql);
+				sentenciaEmple.setInt(1, resul.getInt(1));
+				ResultSet resulEmple=sentenciaEmple.executeQuery();
+				resulEmple.next();
+				String cambios="";
+				//Comprobar cambios
+				if(!resul.getString(2).equals(resulEmple.getString(2))) cambios+="Se actualiza el nombre\n";
+				if(!resul.getString(3).equals(resulEmple.getString(3))) cambios+="Se actualiza el apellido 1\n";
+				if(!(resul.getString(4)==resulEmple.getString(4))) cambios+="Se actualiza el apellido 2\n";
+				if(!resul.getString(5).equals(resulEmple.getString(5))) cambios+="Se actualiza la extension\n";
+				if(!resul.getString(6).equals(resulEmple.getString(6))) cambios+="Se actualiza el email\n";
+				if(!resul.getString(7).equals(resulEmple.getString(7))) cambios+="Se actualiza el codigo de oficina\n";
+				if(resul.getInt(8)!=resulEmple.getInt(8)) cambios+="Se actualiza el codigo del jefe\n";
+				if(!resul.getString(9).equals(resulEmple.getString(9))) cambios+="Se actualiza el puesto\n";
+				
+				if(cambios.equals("")) System.out.println("No se actualiza el empleado "+resul.getInt(1)+", no hay cambios");
+				else {
+					String sql2="update empleados set nombre=?,apellido1=?,apellido2=?,extension=?,email=?,codigooficina=?,codigojefe=?,puesto=? where codigoempleado=?";
+					PreparedStatement sentenciaUpdate=conexion.prepareStatement(sql2);
+					sentenciaUpdate.setInt(9, resul.getInt(1));
+					sentenciaUpdate.setString(1, resul.getString(2));
+					sentenciaUpdate.setString(2, resul.getString(3));
+					sentenciaUpdate.setString(3, resul.getString(4));
+					sentenciaUpdate.setString(4, resul.getString(5));
+					sentenciaUpdate.setString(5, resul.getString(6));
+					sentenciaUpdate.setString(6, resul.getString(7));
+					sentenciaUpdate.setInt(7, resul.getInt(8));
+					sentenciaUpdate.setString(8, resul.getString(9));
+					int filas=sentenciaUpdate.executeUpdate();
+					System.out.println("Empleado actualizado: "+resul.getInt(1)+", Cambios: "+cambios);
+					sentenciaUpdate.close();
+				}
+				sentenciaEmple.close();
+			}
+			else {
+				System.out.println("Error, no se actualiza el empleado "+resul.getInt(1)+"\n"+mensaje);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 }
