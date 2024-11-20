@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 
 import clases.*;
 
@@ -21,6 +22,19 @@ public class Principal {
 		verDatosCentro(1000);
 		verDatosCentro(1111);
 		verDatosCentro(1050);
+		
+		mostrarDatosProfesor(1011); //Tiene subordinados
+		System.out.println("--------------------------");
+		mostrarDatosProfesor(2002); //No es jefe
+		System.out.println("--------------------------");
+		mostrarDatosProfesor(8888); //No existe;
+		
+		actualizarCentro(1500, "Centro 1500",2000,"C/Las Palmeras 2"); //Centro nuevo, se crea
+		actualizarCentro(1050, "Centro 1050",2000,"C/Las Palmeras 2"); //Centro existe, se actualiza
+		
+		asignarAsignaturaAProfesor(1000,"Nueva"); //Nueva asignatura
+		asignarAsignaturaAProfesor(1000,"IF0003"); //No tiene la asignatura, se le añade
+		asignarAsignaturaAProfesor(1000,"IF0001"); //Ya tiene la asignatura
 	}
 	
 	public static void verDatosCentro(int cod) {
@@ -50,5 +64,110 @@ public class Principal {
 			if(p.getC1Profesores()!=null) jefe=p.getC1Profesores().getNombreApe();
 			System.out.printf("%5s %-30s %-30s %-30s %-20s %n",p.getCodProf(),p.getNombreApe(),espe,jefe,p.getC1Asignaturases().size());
 		}
+	}
+	public static void mostrarDatosProfesor(int id) {
+		Session session=factori.openSession();
+		C1Profesores pf=(C1Profesores)session.get(C1Profesores.class, id);
+		if(pf==null) System.out.println("Cod profesor no existe: "+id);
+		else{
+			System.out.println("Nombre profesor: "+pf.getNombreApe());
+			System.out.println("Nombre especialidad: "+pf.getC1Especialidad().getNombreEspe());
+			String jefe="SIN JEFE";
+			String codigo="SIN COD";
+			if(pf.getC1Profesores()!=null) {
+				jefe=pf.getC1Profesores().getNombreApe();
+				Short codi=pf.getC1Profesores().getCodProf();
+				codigo=codi.toString();
+			}
+			System.out.println("Nombre jefe: "+jefe+" Codigo: "+codigo);
+			System.out.println("Nombre del centro: "+pf.getC1Centros().getNomCentro());
+			System.out.println("Imparte: "+pf.getC1Asignaturases().size());
+			if(pf.getC1Asignaturases().size()>0) {
+				System.out.println("\tCOD ASIG   NOMBREASIG");
+				System.out.println("\t--------   ----------");
+				Set<C1Asignaturas>lista=pf.getC1Asignaturases();
+				for(C1Asignaturas a:lista) {
+					System.out.println("\t"+a.getCodAsig()+"     "+a.getNombreAsi());
+				}
+				System.out.println("\t--------   ----------");
+			}
+			if(pf.getC1Profesoreses().size()>0) {
+				System.out.println("\tCOD PROF   NOMBRE PROF");
+				System.out.println("\t--------   ----------");
+				Set<C1Profesores>lista=pf.getC1Profesoreses();
+				for(C1Profesores p:lista) {
+					System.out.println("\t"+p.getCodProf()+"       "+p.getNombreApe());
+				}
+				System.out.println("\t--------   ----------");
+			}
+			System.out.println("Jefe de profesores: "+pf.getC1Profesoreses().size());
+		}
+		session.close();
+	}
+	
+	private static void actualizarCentro(int codCentro, String nombre, int codDirector, String direccion) {
+		Session sesion=factori.openSession();
+		C1Centros centro=(C1Centros)sesion.get(C1Centros.class, codCentro);
+		Transaction tx=sesion.beginTransaction();
+		if(centro==null) { //Si el centro no existe, lo creamos
+			centro=new C1Centros();
+			centro.setCodCentro((short)codCentro);
+			centro.setNomCentro(nombre);
+			centro.setDirector((short)codDirector);
+			centro.setDireccion(direccion);
+			sesion.persist(centro);
+			System.out.println("Centro creado: "+codCentro);
+		}
+		else { //Si existe, lo actualizamos
+			centro.setCodCentro((short)codCentro);
+			centro.setNomCentro(nombre);
+			centro.setDirector((short)codDirector);
+			centro.setDireccion(direccion);
+			sesion.merge(centro);
+			System.out.println("Centro actualizado: "+codCentro);
+		}
+		//Añadimos el profesor 1000 al centro. Volverlo a cargar
+		C1Profesores pro=(C1Profesores)sesion.get(C1Profesores.class, 1000);
+		if(pro!=null) { //Si el profesor existe, se añade
+			centro.getC1Profesoreses().add(pro);
+			sesion.merge(centro);
+			System.out.println("Profesor 1000 añadido al centro "+codCentro);
+		}
+		tx.commit();
+		sesion.close();
+	}
+	
+	private static void asignarAsignaturaAProfesor(int codProfesor, String codAsignatura) {
+		Session session = factori.openSession();
+		Transaction tx=session.beginTransaction();
+		C1Profesores profesor=session.get(C1Profesores.class, codProfesor);
+		if (profesor == null) {
+			System.out.println("El profesor no existe. "+codProfesor);
+		}
+		else {
+			C1Asignaturas asignatura=session.get(C1Asignaturas.class, codAsignatura);
+			if(asignatura==null) { //No existe, se crea
+				asignatura=new C1Asignaturas();
+				asignatura.setCodAsig(codAsignatura);
+				asignatura.setNombreAsi(codAsignatura+" NOMBRE");
+				session.persist(asignatura);
+				System.out.println("Asignatura creada: "+codAsignatura);
+			}
+			boolean yaTiene=false;
+			Set<C1Asignaturas>lista=profesor.getC1Asignaturases();
+			for(C1Asignaturas a:lista) {
+				if(a.getCodAsig().equals(codAsignatura)) {
+					yaTiene=true;
+					System.out.println("Profesor "+codProfesor+" ya tiene la asignatura "+codAsignatura);
+				}
+			}
+			if(!yaTiene) {
+				profesor.getC1Asignaturases().add(asignatura);
+				session.merge(asignatura);
+				System.out.println("Asignatura "+codAsignatura+" añadida al profesor "+codProfesor);
+			}
+		}
+		tx.commit();
+		session.close();
 	}
 }

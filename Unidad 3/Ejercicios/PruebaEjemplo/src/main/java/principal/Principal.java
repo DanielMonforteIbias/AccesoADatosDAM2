@@ -27,6 +27,16 @@ public class Principal {
 		cargarDepartGet(10);
 		cargarDepartGet(100);
 		cargarDepartGet(61);
+		
+		
+		actualizarDeparEmpleado(1111,10); //Empleado no existe
+		actualizarDeparEmpleado(4455,99); //Dept no existe
+		actualizarDeparEmpleado(4455,30); //Correcta
+		
+		insertarEmpleadoAlSetDepartamento(999,4455); //Dept no existe
+		insertarEmpleadoAlSetDepartamento(30,445555); //Empleado no existe
+		insertarEmpleadoAlSetDepartamento(20,4455); //Correcta
+		
 		factori.close();
 
 	}
@@ -112,5 +122,48 @@ public class Principal {
 			}
 		}
 		session.close();
+	}
+	
+	private static void actualizarDeparEmpleado(int idEmpleado, int idDepartamento) {
+		Session session = factori.openSession();
+		Empleados emple = (Empleados) session.get(Empleados.class, idEmpleado);
+		if (emple == null) System.out.println("El Empleado no existe. No se puede actualizar: "+idEmpleado);
+		else {
+			Departamentos dep = (Departamentos) session.get(Departamentos.class, idDepartamento);
+			if (dep == null) System.out.println("El departamento no existe. No se puede actualizar: "+idDepartamento);
+				else {
+					Transaction tx = session.beginTransaction();
+					emple.setDepartamentos(dep);
+					System.out.println("Empleado " + idEmpleado + " actualizado al departamento " + idDepartamento);
+					// en desuso session.update(emple);
+					session.merge(emple);
+					tx.commit();
+					}
+			}
+		session.close();
+	}
+	private static void insertarEmpleadoAlSetDepartamento(int idDepartamento, int idEmpleado) {
+		Session session = factori.openSession();
+
+		Departamentos dep = (Departamentos) session.get(Departamentos.class, idDepartamento);
+		if (dep == null) {
+			System.out.println("El departamento no existe. No se puede insertar: "+idDepartamento);
+		} else {
+			// compruebo empleado
+			Empleados emple = (Empleados) session.get(Empleados.class, BigInteger.valueOf(idEmpleado));
+			if (emple == null) {
+				System.out.println("El Empleado no existe. No se puede insertar: "+idEmpleado);
+			} else {
+				// lo añado al set
+				Transaction tx = session.beginTransaction();
+				dep.getEmpleadoses().add(emple);
+				System.out.println("Empleado " + idEmpleado + " añadido al departamento " + idDepartamento);
+				//en desuso session.update(dep);
+				session.merge(dep);
+				tx.commit();
+			}
+		}
+		session.close();
+		//Si todo está bien y no se actualiza en la base de datos, cambiar de true a false la propiedad inverse de Departamentos.hbm.xml
 	}
 }

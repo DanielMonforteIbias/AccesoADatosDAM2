@@ -12,7 +12,7 @@
         <property name="loc" type="string">
             <column length="15" name="LOC"/>
         </property>
-        <set fetch="select" inverse="true" lazy="true" name="empleadoses" table="EMPLEADOS">
+        <set fetch="select" inverse="false" lazy="true" name="empleadoses" table="EMPLEADOS">
             <key>
                 <column name="DEPT_NO" not-null="true" precision="22" scale="0"/>
             </key>
