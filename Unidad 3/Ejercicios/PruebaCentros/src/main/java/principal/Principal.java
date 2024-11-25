@@ -1,5 +1,6 @@
 package principal;
 
+import java.util.List;
 import java.util.Set;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -7,6 +8,7 @@ import java.util.logging.Logger;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 
 import clases.*;
 
@@ -32,9 +34,14 @@ public class Principal {
 		actualizarCentro(1500, "Centro 1500",2000,"C/Las Palmeras 2"); //Centro nuevo, se crea
 		actualizarCentro(1050, "Centro 1050",2000,"C/Las Palmeras 2"); //Centro existe, se actualiza
 		
-		asignarAsignaturaAProfesor(1000,"Nueva"); //Nueva asignatura
-		asignarAsignaturaAProfesor(1000,"IF0003"); //No tiene la asignatura, se le añade
+		asignarAsignaturaAProfesor(1000,"Nueva2"); //Nueva asignatura
+		asignarAsignaturaAProfesor(1000,"IF0006"); //No tiene la asignatura, se le añade
 		asignarAsignaturaAProfesor(1000,"IF0001"); //Ya tiene la asignatura
+		
+		borrarAsignatura("IF0002"); //Existe y tiene registros
+		borrarAsignatura("IF000666"); //No existe
+		
+		listarCentros();
 	}
 	
 	public static void verDatosCentro(int cod) {
@@ -57,13 +64,22 @@ public class Principal {
 	public static void mostrarDatosProfesoresCentro(Set<C1Profesores>lista) {
 		System.out.printf("%5s %-30s %-30s %-30s %-20s %n","Cod","NombreProfesor","NombreEspecialidad","Nombre Jefe","NumAsig que imparte");
 		System.out.printf("%5s %-30s %-30s %-30s %-20s %n","-----","------------------------------","------------------------------","------------------------------","--------------------");
+		int maxAsignaturas=0;
+		String nombreMaxAsignaturas="";
 		for(C1Profesores p:lista) {
 			String jefe="NO TIENE";
 			String espe="NO TIENE";
 			if(p.getC1Especialidad()!=null) espe=p.getC1Especialidad().getNombreEspe();
 			if(p.getC1Profesores()!=null) jefe=p.getC1Profesores().getNombreApe();
 			System.out.printf("%5s %-30s %-30s %-30s %-20s %n",p.getCodProf(),p.getNombreApe(),espe,jefe,p.getC1Asignaturases().size());
+			if(p.getC1Asignaturases().size()>maxAsignaturas) {
+				maxAsignaturas=p.getC1Asignaturases().size();
+				nombreMaxAsignaturas=p.getNombreApe();
+			}
+			else if (p.getC1Asignaturases().size()==maxAsignaturas)nombreMaxAsignaturas+="   "+p.getNombreApe();
 		}
+		System.out.printf("%5s %-30s %-30s %-30s %-20s %n","-----","------------------------------","------------------------------","------------------------------","--------------------");
+		System.out.println("Nombre de profesor que imparte mas asignaturas: "+nombreMaxAsignaturas);
 	}
 	public static void mostrarDatosProfesor(int id) {
 		Session session=factori.openSession();
@@ -150,7 +166,9 @@ public class Principal {
 				asignatura=new C1Asignaturas();
 				asignatura.setCodAsig(codAsignatura);
 				asignatura.setNombreAsi(codAsignatura+" NOMBRE");
+				System.out.println(codAsignatura+" es nueva");
 				session.persist(asignatura);
+				
 				System.out.println("Asignatura creada: "+codAsignatura);
 			}
 			boolean yaTiene=false;
@@ -167,7 +185,47 @@ public class Principal {
 				System.out.println("Asignatura "+codAsignatura+" añadida al profesor "+codProfesor);
 			}
 		}
-		tx.commit();
+		try {
+			tx.commit();
+		}catch( org.hibernate.exception.ConstraintViolationException e) {
+			e.printStackTrace();
+		}catch( org.hibernate.exception.GenericJDBCException e2){
+			System.out.println(e2.getMessage());
+		}
+		
+		session.close();
+	}
+	
+	private static void borrarAsignatura(String codAsig) {
+		Session session=factori.openSession();
+		C1Asignaturas asi=(C1Asignaturas)session.get(C1Asignaturas.class, codAsig);
+		if(asi==null) {
+			System.out.println("LA ASIGNATURA A BORRAR NO EXISTE: "+codAsig);
+		}
+		else {
+			Transaction tx=session.beginTransaction();
+			session.remove(asi);
+			tx.commit();
+			System.out.println("LA ASIGNATURA HA SIDO BORRADA: "+codAsig);
+		}
+	}
+	private static void listarCentros() {
+		Session session=factori.openSession();
+		Query<C1Centros>q=session.createQuery("from C1Centros",C1Centros.class);
+		List<C1Centros> lista=q.getResultList();
+		if(lista.size()>0) { //Si el tamaño de la lista es mayor que 0
+			for(C1Centros c:lista) {
+				System.out.println("Cod centro: "+c.getCodCentro()+"   Nombre: "+c.getNomCentro()+"   Numero profesores: "+c.getC1Profesoreses().size());
+				System.out.println("--------------------------------------------------------------------------------------------------------------------");
+				if(c.getC1Profesoreses().size()>0) {
+					mostrarDatosProfesoresCentro(c.getC1Profesoreses());
+				}
+				else System.out.println("(No hay profesores en este centro)");
+				System.out.println("");
+			}
+			
+		}
+		else System.out.println("No hay centros");
 		session.close();
 	}
 }

@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 
 import clases.*;
 
@@ -27,6 +28,10 @@ public class Principal {
 		
 		System.out.println("----------------");
 		verlinea(50); // linea no existe
+		
+		
+		actualizarOrdenLineaEstacion(1,1,14); //Existe
+		actualizarOrdenLineaEstacion(2,1,14); //No existe
 		factori.close();
 	}
 
@@ -60,5 +65,20 @@ public class Principal {
 		}
 		session.close();
 	}
-
+	//Metoo que reciba un codigo de tren, un codigo de linea y un orden, y actualice el orden para esa linea y esa estacion
+	//Comprobar que existe esa linea estacion antes de actualizar (que existen juntos, no por separado)
+	private static void actualizarOrdenLineaEstacion(int codLinea, int codEstacion, int orden) {
+		Session session=factori.openSession();
+		TLineaEstacion lineaEstacion=session.get(TLineaEstacion.class,new TLineaEstacionId(codLinea,codEstacion)); //Si el ID de la clase es un objeto hay que pasarle como clave ese objeto
+		if(lineaEstacion!=null) {
+			Transaction tx=session.beginTransaction();
+			lineaEstacion.setOrden(orden);
+			session.merge(lineaEstacion);
+			tx.commit();
+			
+			System.out.println("Linea-Estacion ("+codLinea+","+codEstacion+") actualizado. Orden nuevo: "+orden);
+		}
+		else System.out.println("Linea-Estacion no existe: ("+codLinea+", "+codEstacion+")");
+		session.close();
+	}
 }
