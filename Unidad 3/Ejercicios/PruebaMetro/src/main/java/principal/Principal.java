@@ -1,5 +1,7 @@
 package principal;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -7,6 +9,7 @@ import java.util.logging.Logger;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 
 import clases.*;
 
@@ -20,18 +23,27 @@ public class Principal {
 
 		factori = Conexion.getSession(); // Creo la sessionFactory una única vez.
 
-		System.out.println("----------------");
-		verlinea(1); // de 1 a 7
+//		System.out.println("----------------");
+//		verlinea(1); // de 1 a 7
+//		
+//		System.out.println("----------------");
+//		verlinea(5); // linea sin estaciones
+//		
+//		System.out.println("----------------");
+//		verlinea(50); // linea no existe
+//		
+//		
+//		actualizarOrdenLineaEstacion(1,1,14); //Existe
+//		actualizarOrdenLineaEstacion(2,1,14); //No existe
 		
-		System.out.println("----------------");
-		verlinea(5); // linea sin estaciones
+		verAccesosEstacion(1);
+		verAccesosEstacion(21);
+		verAccesosEstacion(210);
 		
-		System.out.println("----------------");
-		verlinea(50); // linea no existe
-		
-		
-		actualizarOrdenLineaEstacion(1,1,14); //Existe
-		actualizarOrdenLineaEstacion(2,1,14); //No existe
+		List<String>tipos=new ArrayList<>();
+		tipos.add("SERIE 3000");
+		tipos.add("SERIE 8400");
+		verTrenesPorTipo(tipos);
 		factori.close();
 	}
 
@@ -65,7 +77,7 @@ public class Principal {
 		}
 		session.close();
 	}
-	//Metoo que reciba un codigo de tren, un codigo de linea y un orden, y actualice el orden para esa linea y esa estacion
+	//Metodo que reciba un codigo de tren, un codigo de linea y un orden, y actualice el orden para esa linea y esa estacion
 	//Comprobar que existe esa linea estacion antes de actualizar (que existen juntos, no por separado)
 	private static void actualizarOrdenLineaEstacion(int codLinea, int codEstacion, int orden) {
 		Session session=factori.openSession();
@@ -79,6 +91,39 @@ public class Principal {
 			System.out.println("Linea-Estacion ("+codLinea+","+codEstacion+") actualizado. Orden nuevo: "+orden);
 		}
 		else System.out.println("Linea-Estacion no existe: ("+codLinea+", "+codEstacion+")");
+		session.close();
+	}
+	private static void verAccesosEstacion(int codEstacion) {
+		Session session=factori.openSession();
+		TEstaciones est=session.get(TEstaciones.class, codEstacion);
+		if(est!=null) {
+			String con="from TAccesos e where e.TEstaciones.codEstacion=:idestacion order by e.codAcceso";
+			Query q=session.createQuery(con,TAccesos.class);
+			q.setParameter("idestacion",codEstacion);
+			List<TAccesos>lista=q.list();
+			if(lista.size()>0) {
+				System.out.println("Accesos a la estacion con codigo: "+codEstacion);
+				System.out.printf("%15s %20s %n","COD ACCESO", "DESCRIPCION");
+				System.out.printf("%15s %20s %n","---------------", "--------------------");
+				for(TAccesos a:lista) {
+					System.out.printf("%15s %20s %n",a.getCodAcceso(),a.getDescripcion());
+				}
+			}
+			else System.out.println("La estacion no tiene accesos: "+codEstacion);
+		}
+		else System.out.println("La estacion no existe: "+codEstacion);
+	}
+	private static void verTrenesPorTipo(List<String>tipos) {
+		Session session=factori.openSession();
+		String con="from TTrenes e where e.tipo in (:lista)";
+		Query q=session.createQuery(con,TTrenes.class);
+		q.setParameterList("lista",tipos);
+		List<TTrenes>lista=q.list();
+		System.out.println("Trenes de los tipos: "+tipos.toString());
+		for(TTrenes t:lista) {
+			System.out.printf("%5s %20s %15s %n",t.getCodTren(),t.getNombre(),t.getTipo());
+		}
+		
 		session.close();
 	}
 }
