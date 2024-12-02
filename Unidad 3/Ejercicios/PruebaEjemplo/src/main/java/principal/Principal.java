@@ -1,6 +1,7 @@
 package principal;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -8,6 +9,7 @@ import java.util.logging.Logger;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 
 import clases.*;
 
@@ -21,22 +23,27 @@ public class Principal {
 
 		factori = Conexion.getSession(); // SesionFactory
 
-		insertarDepartamento();
-		insertarEmpleado();
+//		insertarDepartamento();
+//		insertarEmpleado();
+//		
+//		cargarDepartGet(10);
+//		cargarDepartGet(100);
+//		cargarDepartGet(61);
+//		
+//		
+//		actualizarDeparEmpleado(1111,10); //Empleado no existe
+//		actualizarDeparEmpleado(4455,99); //Dept no existe
+//		actualizarDeparEmpleado(4455,30); //Correcta
+//		
+//		insertarEmpleadoAlSetDepartamento(999,4455); //Dept no existe
+//		insertarEmpleadoAlSetDepartamento(30,445555); //Empleado no existe
+//		insertarEmpleadoAlSetDepartamento(20,4455); //Correcta
 		
-		cargarDepartGet(10);
-		cargarDepartGet(100);
-		cargarDepartGet(61);
+		consultasObjetos();
 		
+		consultaTotales();
 		
-		actualizarDeparEmpleado(1111,10); //Empleado no existe
-		actualizarDeparEmpleado(4455,99); //Dept no existe
-		actualizarDeparEmpleado(4455,30); //Correcta
-		
-		insertarEmpleadoAlSetDepartamento(999,4455); //Dept no existe
-		insertarEmpleadoAlSetDepartamento(30,445555); //Empleado no existe
-		insertarEmpleadoAlSetDepartamento(20,4455); //Correcta
-		
+		consultaConObjetos();
 		factori.close();
 
 	}
@@ -166,4 +173,45 @@ public class Principal {
 		session.close();
 		//Si todo está bien y no se actualiza en la base de datos, cambiar de true a false la propiedad inverse de Departamentos.hbm.xml
 	}
+	private static void consultasObjetos() {
+		Session session = factori.openSession();
+		String hql="from Empleados e, Departamentos d where  e.departamentos.deptNo=d.deptNo order by e.apellido";
+		Query cons = session.createQuery(hql,Object.class);
+		List datos = cons.list();
+		for (int i = 1; i < datos.size(); i++) {
+			Object[] par = (Object[]) datos.get(i);
+			Empleados em = (Empleados) par[0]; // objeto empleado el primero
+			Departamentos de = (Departamentos) par[1]; // objeto departamento el segundo
+			System.out.println(em.getApellido() + "*" + em.getSalario() + "*" +de.getDnombre() + "*" + de.getLoc());
+		}
+		session.close();
+	}
+	
+	private static void consultaConObjetos() {
+		Session session = factori.openSession();
+		Query cons = session.createQuery("select d.deptNo, count(em.empNo), coalesce(avg(em.salario),0), d.dnombre from Departamentos d left join d.empleadoses em group by d.deptNo,d.dnombre order by d.deptNo",Object.class);
+		System.out.printf("%n%10s %-15s %14s %-14s", "NUMERO DEP", "NOMBRE", "SALARIO MEDIO", "NUM EMPLES");
+		System.out.printf("%n%10s %-15s %14s %-14s", "----------", "---------------","--------------", "--------------");
+		List filas = cons.list();
+		for (int i = 0; i < filas.size(); i++) {
+			Object[] filaActual = (Object[]) filas.get(i); // Acceso a una fila
+			System.out.printf("%n%10s %-15s %14.2f %-14s", filaActual[0], filaActual[3], filaActual[2], filaActual[1]);
+		}
+	}
+
+	
+	private static void consultaTotales() {
+		Session session = factori.openSession();
+		Query cons4 = session.createQuery("select new clases.Totales(d.deptNo, count(em.empNo),coalesce(avg(em.salario),0), d.dnombre ) from Departamentos d left join d.empleadoses em group by  d.deptNo,d.dnombre order by d.deptNo",Totales.class);	
+		System.out.printf("%n%10s %-15s %14s %-14s", "NUMERO DEP", "NOMBRE","SALARIO MEDIO", "NUM EMPLES");
+		System.out.printf("%n%10s %-15s %14s %-14s", "----------", "---------------","--------------", "--------------");
+		List<Totales> filas4 = cons4.list();
+		for (int i = 0; i < filas4.size(); i++) {
+			Totales tot = (Totales) filas4.get(i);
+			System.out.printf("%n%10s %-15s %14.2f %-14s",tot.getNumero(),tot.getNombre() ,tot.getMedia(),tot.getCuenta()); //Para que salgan solo 2 decimales poner en el printf .(numero de decimales)f
+		}
+		System.out.printf("%n%10s %-15s %14s %-14s", "----------", "---------------","--------------", "--------------");
+		session.close();
+	}
+
 }

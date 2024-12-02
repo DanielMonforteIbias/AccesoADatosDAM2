@@ -36,14 +36,20 @@ public class Principal {
 //		actualizarOrdenLineaEstacion(1,1,14); //Existe
 //		actualizarOrdenLineaEstacion(2,1,14); //No existe
 		
-		verAccesosEstacion(1);
-		verAccesosEstacion(21);
-		verAccesosEstacion(210);
+//		verAccesosEstacion(1);
+//		verAccesosEstacion(21);
+//		verAccesosEstacion(210);
+//		
+//		List<String>tipos=new ArrayList<>();
+//		tipos.add("SERIE 3000");
+//		tipos.add("SERIE 8400");
+//		verTrenesPorTipo(tipos);
+//		
+//		listarLineasEstacionesAccesos();
 		
-		List<String>tipos=new ArrayList<>();
-		tipos.add("SERIE 3000");
-		tipos.add("SERIE 8400");
-		verTrenesPorTipo(tipos);
+		verAccesosPorEstacion();
+		
+		verTiposTrenes();
 		factori.close();
 	}
 
@@ -125,5 +131,81 @@ public class Principal {
 		}
 		
 		session.close();
+	}
+	private static void listarLineasEstacionesAccesos() {
+		Session session=factori.openSession();
+		String con="from TLineas T left join TLineaEstacions LT left join LT.TEstaciones.TAccesoses TA order by T.codLinea";
+		Query q=session.createQuery(con,Object.class);
+		List<Object[]>datos=q.list();
+		System.out.printf("%6s %-30s %6s %-30s %6s %-30s %n","CODLIN", "NOMBRELIN","CODEST","NOMBREESTACION","CODACC","DESCR.ACCESO");
+		System.out.printf("%6s %-30s %6s %-30s %6s %-30s %n","------", "------------------------------","------","------------------------------","------","------------------------------");
+		for(Object linea:datos) {
+			Object[] l=(Object[])linea;
+			TLineas lin=(TLineas)l[0];
+			TLineaEstacion liEst=(TLineaEstacion)l[1];
+			TAccesos acc=(TAccesos)l[3];
+			String est="SIN ESTACIONES";
+			String acceso="SIN ACCESOS";
+			String codEs="";
+			String codAc="";
+			if(liEst!=null) {
+				est=liEst.getTEstaciones().getNombre();
+				codEs=liEst.getTEstaciones().getCodEstacion()+"";
+			}
+			if(acc!=null) {
+				acceso=acc.getDescripcion();
+				codAc=acc.getCodAcceso()+"";
+			}
+			System.out.printf("%6s %-30s %6s %-30s %6s %-30s %n",lin.getCodLinea(),lin.getNombre(),codEs,est,codAc,acceso);
+		}
+		session.close();
+	}
+	
+	private static void verAccesosPorEstacion() {
+		Session session=factori.openSession();
+		String con="select new clases.AccesosPorEstacion(e.codEstacion, e.nombre, e.direccion, count(a)) from TEstaciones e left join e.TAccesoses a group by e.codEstacion, e.nombre, e.direccion order by  e.codEstacion";
+		Query q=session.createQuery(con,AccesosPorEstacion.class);
+		List<AccesosPorEstacion>lista=q.list();
+		System.out.printf("%6s %-30s %-30s %6s %n","CODEST", "NOMBRE","DIRECCION","NUMACC");
+		System.out.printf("%6s %-30s %-30s %6s %n","------", "------------------------------", "------------------------------","------");
+		int contador=0, sumaAccesos=0, maxAccesos=0;
+		String estacionMaxAccesos="";
+		for(AccesosPorEstacion a:lista) {
+			System.out.printf("%6s %-30s %-30s %6s %n",a.getCodEstacion(),a.getNombre(),a.getDireccion(),a.getContador());
+			contador++;
+			sumaAccesos+=a.getContador();
+			if(a.getContador()>maxAccesos) {
+				maxAccesos=(int) a.getContador();
+				estacionMaxAccesos=a.getNombre();
+			}
+			else if (a.getContador()==maxAccesos) estacionMaxAccesos+="      "+a.getNombre();
+		}
+		System.out.printf("%6s %-30s %-30s %6s %n","------", "------------------------------", "------------------------------","------");
+		System.out.println("Nombre estacion/estaciones con mas accesos: "+estacionMaxAccesos);
+		System.out.println("Media de accesos por estacion: "+((float)sumaAccesos/contador));
+		session.close();
+	}
+	private static void verTiposTrenes() {
+		Session session = factori.openSession();
+		Query cons = session.createQuery("select  t.tipo, count(*) from TTrenes t group by t.tipo order by t.tipo",Object.class);
+		System.out.printf("%-30s %-10s %n", "TIPO", "NUM TRENES");
+		System.out.printf("%-30s %-10s %n", "------------------------------", "----------");
+		List filas = cons.list();
+		int contador=0, sumaTrenes=0, maxTrenes=0;
+		String tipoMaxTrenes="";
+		for (int i = 0; i < filas.size(); i++) {
+			Object[] filaActual = (Object[]) filas.get(i); // Acceso a una fila
+			System.out.printf("%-30s %-10s %n",filaActual[0],filaActual[1]);
+			contador++;
+			sumaTrenes+=(long)filaActual[1];
+			if((long)filaActual[1]>maxTrenes) {
+				maxTrenes=(int)filaActual[1];
+				tipoMaxTrenes=filaActual[0]+"";
+			}
+			else if((long)filaActual[1]==maxTrenes) {
+				tipoMaxTrenes+="      "+filaActual[0];
+			}
+		}
+		System.out.println("Media de trenes por tipo: "+((float)sumaTrenes/contador));
 	}
 }

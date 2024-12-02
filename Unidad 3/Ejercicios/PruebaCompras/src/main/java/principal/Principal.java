@@ -40,4 +40,22 @@ public class Principal {
 		}
 		session.close();
 	}
+	private static void listarComprasClientes() {
+		Session session=factory.openSession();
+		String con="select new clases.ComprasPorCliente(c.codCliente, c.nombre) from Clientes c";
+		Query q=session.createQuery(con,ComprasPorCliente.class);
+		List<ComprasPorCliente>lista=q.list();
+		System.out.printf("%11s %-30s %-30s %-30s %n","Cod Cliente","Nombre", "Numero de compras","Total compras");
+		System.out.printf("%11s %-30s %-30s %-30s %n","-----------", "------------------------------", "------------------------------","------------------------------");
+		int totalNumCompras=0;
+		double totalCompras=0;
+		for(ComprasPorCliente c:lista) {
+			System.out.printf("%11s %-30s %-30s %-30s %n",c.getCodCliente(), c.getNombre(),c.getNumCompras(),c.getTotalCompras());
+			totalNumCompras+=c.getNumCompras();
+			totalCompras+=c.getTotalCompras();
+		}
+		System.out.printf("%11s %-30s %-30s %-30s %n","-----------", "------------------------------", "------------------------------","------------------------------");
+		System.out.printf("%11s %-30s %-30s %-30s %n","TOTALES", "",totalNumCompras,totalCompras);
+		session.close();
+	}
 }
