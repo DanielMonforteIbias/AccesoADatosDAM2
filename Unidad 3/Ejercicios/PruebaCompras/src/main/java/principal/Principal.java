@@ -2,11 +2,13 @@ package principal;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
 import clases.*;
@@ -27,6 +29,12 @@ public class Principal {
 		
 		listarTotalProductos();
 		listarTotalProductos2();
+		
+		actualizarStock();
+		
+		listarDetallesProductos();
+		
+		borrarCliente(1);
 		factory.close();
 
 	}
@@ -145,10 +153,76 @@ public class Principal {
 				productoMaximo=p.getDenominacion();
 			}
 			else if(sumaUnidades==maximo) productoMaximo+="     "+p.getDenominacion();
+			
+			//OTRA FORMA EN VEZ DE UNA CONSULTA ES RECORRER EL SET
+			//Set<Detcompras>detalle=p.getDetcomprases();
+			//for(Detcompras d:detalle){
+			//	sumaUnidades+=de.getUnidades().intValue();
+			//}
+			//Si se quiere sacar la cantidad de compras en las que esta un producto se puede utilizar el size del set
+			
 		}
 		System.out.printf("%12s %30s %10s %10s %10s %n","------------","------------------------------","----------","----------","----------");
 		System.out.printf("%12s %30s %10s %10s %10s %n","TOTALES","","",sumaUnidadesTotal,sumaImportes);
 		System.out.println("Producto mas vendido: "+productoMaximo);
+		session.close();
+	}
+	
+	private static void listarDetallesProductos() {
+		Session session=factory.openSession();
+		String hql="from Productos p order by p.codproducto";
+		Query<Productos> cons = session.createQuery(hql,Productos.class);
+		List<Productos> datos = cons.list();
+		for(Productos p:datos) {
+			System.out.println();
+			System.out.println("Cod producto: "+p.getCodproducto());
+			System.out.println("Denominacion: "+p.getDenominacion()+"     Precio: "+p.getPvp());
+			System.out.println("Stock actual: "+p.getStock().intValue());
+			System.out.println("--------------------------------------------------------------");
+			if(p.getDetcomprases().size()>0) {
+				System.out.printf("%10s %10s %10s %-30s %10s %10s %n","NUM COMPRA","FECHA","COD CLI","NOMBRE CLI","UNIDADES","IMPORTE");
+				System.out.printf("%10s %10s %10s %-30s %10s %10s %n","----------","----------","----------","------------------------------","----------","----------");
+				Set<Detcompras>detalle=p.getDetcomprases();
+				//Si queremos tener la salida ordenada por numero de compra habria que hacerlo por consulta en lugar de usar el set
+				//String hql3="from Detcompras d where d.productos.codproducto=:codproducto order by id.numcompra";
+				int sumaUnidades=0;
+				float totalImporte=0;
+				for(Detcompras d:detalle){
+					float importe=d.getUnidades().intValue()*p.getPvp().floatValue();
+					totalImporte+=importe;
+					sumaUnidades+=d.getUnidades().intValue();
+					System.out.printf("%10s %10s %10s %-30s %10s %10s %n",d.getCompras().getNumcompra(),d.getCompras().getFecha(),d.getCompras().getClientes().getCodcliente(),d.getCompras().getClientes().getNombre(),d.getUnidades(),importe);
+				}
+				System.out.printf("%10s %10s %10s %-30s %10s %10s %n","----------","----------","----------","------------------------------","----------","----------");
+				System.out.printf("%10s %10s %10s %-30s %10s %10s %n","TOTALES","","","",sumaUnidades,totalImporte);
+			}
+			else System.out.println("   **SIN COMPRAS**   ");
+		}
+		session.close();
+	}
+	
+	private static void actualizarStock() {
+		Session session=factory.openSession();
+		Transaction tx=session.beginTransaction();
+		String hqlModif="update Productos p set p.stock=p.stock+:subida where p.stock<=70";
+		int filasModif=session.createMutationQuery(hqlModif).setParameter("subida", 50).executeUpdate();
+		tx.commit();
+		System.out.println("FILAS MODIFICADAS: "+filasModif);
+		session.close();
+	}
+	
+	private static void borrarCliente(int cli) {
+		Session session=factory.openSession();
+		Transaction tx=session.beginTransaction();
+		String hqlDel="delete Clientes c where c.codcliente=:codcli";
+		try {
+			int filas=session.createMutationQuery(hqlDel).setParameter("codcli",cli).executeUpdate();
+			System.out.println("FILAS BORRADAS");
+		}catch(org.hibernate.exception.ConstraintViolationException e) {
+			System.out.println("Atencion cliente "+cli+" no se puede borrar, tiene registros relacionados");
+		}
+		
+		
 		session.close();
 	}
 }
