@@ -50,6 +50,8 @@ public class Principal {
 		verAccesosPorEstacion();
 		
 		verTiposTrenes();
+		
+		insertarYActualizarTrenesDeNuevos();
 		factori.close();
 	}
 
@@ -191,7 +193,8 @@ public class Principal {
 		System.out.printf("%-30s %-10s %n", "TIPO", "NUM TRENES");
 		System.out.printf("%-30s %-10s %n", "------------------------------", "----------");
 		List filas = cons.list();
-		int contador=0, sumaTrenes=0, maxTrenes=0;
+		int contador=0, sumaTrenes=0;
+		long maxTrenes=0;
 		String tipoMaxTrenes="";
 		for (int i = 0; i < filas.size(); i++) {
 			Object[] filaActual = (Object[]) filas.get(i); // Acceso a una fila
@@ -199,7 +202,7 @@ public class Principal {
 			contador++;
 			sumaTrenes+=(long)filaActual[1];
 			if((long)filaActual[1]>maxTrenes) {
-				maxTrenes=(int)filaActual[1];
+				maxTrenes=(long)filaActual[1];
 				tipoMaxTrenes=filaActual[0]+"";
 			}
 			else if((long)filaActual[1]==maxTrenes) {
@@ -207,5 +210,75 @@ public class Principal {
 			}
 		}
 		System.out.println("Media de trenes por tipo: "+((float)sumaTrenes/contador));
+	}
+	
+	//SIN INSERT
+	private static void insertarYActualizarTrenesDeNuevos() {
+		Session session =factori.openSession();
+		
+		String hql="from TNuevosTrenes n order by n.codTren";
+		Query q=session.createQuery(hql,TNuevosTrenes.class);
+		List<TNuevosTrenes>lista=q.list();
+		Transaction tx=session.beginTransaction();
+		for(TNuevosTrenes t:lista) {
+			if(!tx.isActive()) tx=session.beginTransaction();
+			TTrenes tren=session.get(TTrenes.class, t.getCodTren());
+			TCocheras cochera=session.get(TCocheras.class, t.getCodCochera());
+			TLineas linea=session.get(TLineas.class, t.getCodLinea());
+			String mensaje="";
+			boolean error=false;
+			if(cochera==null) {
+				error=true;
+				mensaje+="Error, la cochera no existe: "+t.getCodCochera()+"\n";
+			}
+			if(linea==null) {
+				error=true;
+				mensaje+="Error, la linea no existe: "+t.getCodLinea()+"\n";
+			}
+			if(tren==null) { //Si no existe, es nuevo, se inserta
+				if(!error) {
+					TTrenes nuevo=new TTrenes();
+					nuevo.setCodTren(t.getCodTren());
+					nuevo.setNombre(t.getNombre());
+					nuevo.setTipo(t.getTipo());
+					nuevo.setTCocheras(cochera);
+					nuevo.setTLineas(linea);
+					session.persist(nuevo);
+					tx.commit();
+					mensaje+="Se ha insertado un tren nuevo: "+t.getCodTren()+"\n";
+				}
+				else mensaje+="Error, no se puede insertar nuevo tren: "+t.getCodTren()+"\n";
+			}
+			else { //Si ya existe, se actualiza el tren
+				if(!error) {
+					tren.setCodTren(t.getCodTren());
+					tren.setNombre(t.getNombre());
+					tren.setTipo(t.getTipo());
+					tren.setTCocheras(cochera);
+					tren.setTLineas(linea);
+					session.merge(tren);
+					tx.commit();
+					mensaje+="Se ha actualizado el tren: "+t.getCodTren()+"\n";
+				}
+				else mensaje+="Error, no se puede actualizar el tren: "+t.getCodTren()+"\n";
+			}
+			System.out.println(mensaje);
+		}
+		session.close();
+	}
+	
+	private static void insertarconinsert() {
+		Session session = factori.openSession();
+		String con = " INSERT into TTrenes  (codTren, nombre, tipo, TCocheras.codCochera, TLineas.codLinea ) select codTren, nombre, tipo, codCochera, codLinea from TNuevosTrenes ";
+		Transaction tx = session.beginTransaction();
+		try {
+			Query cons = (Query) session.createMutationQuery(con);
+			int filascreadas = cons.executeUpdate();
+			tx.commit(); // valida la transacción
+			System.out.printf("FILAS INSERTADAS: %d%n", filascreadas);
+		} catch (org.hibernate.exception.ConstraintViolationException e) {
+			System.out.println(e.getErrorMessage());
+			tx.commit(); 
+		}
 	}
 }

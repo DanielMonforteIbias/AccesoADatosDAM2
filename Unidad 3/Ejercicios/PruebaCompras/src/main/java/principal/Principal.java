@@ -34,7 +34,9 @@ public class Principal {
 		
 		listarDetallesProductos();
 		
-		borrarCliente(1);
+		borrarCliente(1); //No lo borra porque tiene registros
+		borrarCliente(6); //Lo borra
+		borrarCliente(100); //No existe
 		factory.close();
 
 	}
@@ -217,12 +219,16 @@ public class Principal {
 		String hqlDel="delete Clientes c where c.codcliente=:codcli";
 		try {
 			int filas=session.createMutationQuery(hqlDel).setParameter("codcli",cli).executeUpdate();
-			System.out.println("FILAS BORRADAS");
+			if(filas!=0) {
+				System.out.println("CLIENTE BORRADO: "+cli);
+				tx.commit();
+			}
+			else System.out.println("CLIENTE "+cli+" NO EXISTE, NO SE BORRA");
 		}catch(org.hibernate.exception.ConstraintViolationException e) {
-			System.out.println("Atencion cliente "+cli+" no se puede borrar, tiene registros relacionados");
+			System.out.println("CLIENTE "+cli+" TIENE REGISTROS RELACIONADOS, NO SE BORRA");
 		}
-		
-		
 		session.close();
 	}
+	
+	
 }

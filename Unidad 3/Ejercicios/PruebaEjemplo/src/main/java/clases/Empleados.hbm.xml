@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Generated 11 nov 2024, 16:53:16 by Hibernate Tools 6.5.1.Final --><!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<!-- Generated 9 dic 2024, 16:09:52 by Hibernate Tools 5.5.9.Final --><!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
 <hibernate-mapping>
     <class name="clases.Empleados" optimistic-lock="none" table="EMPLEADOS">
         <id name="empNo" type="big_integer">
@@ -13,7 +13,7 @@
             <column length="10" name="APELLIDO"/>
         </property>
         <property name="oficio" type="string">
-            <column length="15" name="OFICIO"/>
+            <column length="10" name="OFICIO"/>
         </property>
         <property name="dir" type="big_integer">
             <column name="DIR" precision="22" scale="0"/>
@@ -22,10 +22,10 @@
             <column length="7" name="FECHA_ALT"/>
         </property>
         <property name="salario" type="java.lang.Double">
-            <column name="SALARIO" precision="126"/>
+            <column name="SALARIO" precision="126" scale="0"/>
         </property>
         <property name="comision" type="java.lang.Double">
-            <column name="COMISION" precision="126"/>
+            <column name="COMISION" precision="126" scale="0"/>
         </property>
     </class>
 </hibernate-mapping>

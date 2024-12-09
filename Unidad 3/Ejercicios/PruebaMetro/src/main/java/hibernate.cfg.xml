@@ -15,8 +15,10 @@
         <mapping resource="clases/TLineaEstacion.hbm.xml"/>
         <mapping resource="clases/TAccesos.hbm.xml"/>
         <mapping resource="clases/TLineas.hbm.xml"/>
+        <mapping resource="clases/TNuevosTrenes.hbm.xml"/>
         <mapping resource="clases/TTrenes.hbm.xml"/>
         <mapping resource="clases/TEstaciones.hbm.xml"/>
         <mapping resource="clases/TCocheras.hbm.xml"/>
+        <mapping resource="clases/TNuevos2.hbm.xml"/>
     </session-factory>
 </hibernate-configuration>

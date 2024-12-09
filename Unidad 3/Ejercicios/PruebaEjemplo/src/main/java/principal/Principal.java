@@ -44,6 +44,10 @@ public class Principal {
 		consultaTotales();
 		
 		consultaConObjetos();
+		
+		insertarDeparDeNuevos();
+		
+		insertarDual();
 		factori.close();
 
 	}
@@ -214,4 +218,37 @@ public class Principal {
 		session.close();
 	}
 
+	private static void insertarDeparDeNuevos() {
+		Session session =factori.openSession();
+		System.out.println("\nInsertar nuevos departamentos\n-----------------------");
+		Transaction tx = session.beginTransaction();
+		try {
+			String hqlInsert = "insert into Departamentos (deptNo, dnombre, loc) select n.deptNo, n.dnombre, n.loc from Nuevos n";
+			Query cons = (Query) session.createMutationQuery( hqlInsert );
+			int filascreadas = cons.executeUpdate();
+			tx.commit(); // valida la transacción
+			System.out.printf("FILAS INSERTADAS: %d%n",filascreadas); 
+		}catch(org.hibernate.exception.ConstraintViolationException e) {
+			System.out.println("ERROR. SE HA ENCONTRADO CLAVES REPETIDAS");
+			System.out.println(e.getErrorMessage());
+		}
+		session.close();
+	}
+	
+	private static void insertarDual() {
+		Session session = factori.openSession();
+		System.out.println("\nInsertar nuevos departamentos\n-----------------------");
+		Transaction tx = session.beginTransaction();
+		try {
+			String hqlInsert = "insert into Departamentos (deptNo, dnombre, loc) select 200, 'Nuevo200', 'Talavera' from dual";
+			Query cons = (Query) session.createMutationQuery(hqlInsert);
+			int filascreadas = cons.executeUpdate();
+			tx.commit(); // valida la transacción
+			System.out.printf("FILAS INSERTADAS: %d%n", filascreadas);
+		} catch (java.lang.IllegalArgumentException e) {
+			System.out.println("ERROR. NO EXISTE LA TABLA ORIGEN.");
+			System.out.println(e.getMessage());
+		}
+		session.close();
+	}
 }
