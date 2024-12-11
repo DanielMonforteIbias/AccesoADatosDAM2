@@ -35,6 +35,8 @@ public class Principal {
 					System.out.println();
 					consulta3();
 					System.out.println();
+					consulta4();
+					System.out.println();
 					consulta5();
 					break;
 				case 2:
@@ -112,6 +114,24 @@ public class Principal {
 		}
 		session.close();
 	}
+	
+	private static void consulta4() {
+		Session session=factory.openSession();
+		String hql="select substring(h.numhabitacion,1,2),count(numhabitacion),count(distinct h.t3tiposhabitaciones)\r\n"
+				+ "from T3habitaciones h\r\n"
+				+ "group by substring(h.numhabitacion,1,2)";
+		Query cons = session.createQuery(hql,Object.class);
+		List datos = cons.list();
+		System.out.println("CONSULTA 4");
+		System.out.printf("%13s %20s %20s %n","PISO","Num habitaciones","Num Tipos");
+		System.out.printf("%13s %30s %20s %n","-------------","------------------------------","--------------------");
+		for (int i = 0; i < datos.size(); i++) {
+			Object[] filaActual = (Object[]) datos.get(i); // Acceso a una fila
+			System.out.printf("%13s %30s %20s %n",filaActual[0],filaActual[1],filaActual[2]);
+		}
+		session.close();
+	}
+	
 	private static void consulta5() {
 		Session session=factory.openSession();
 		String hql="select r.codreserva, r.t3habitaciones.numhabitacion,\r\n"

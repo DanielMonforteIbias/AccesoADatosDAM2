@@ -31,6 +31,7 @@ public class Principal {
 				case 3:
 					consulta1();
 					System.out.println();
+					consulta2();
 					break;
 				case 0:
 					salir=true;
@@ -64,6 +65,23 @@ public class Principal {
 		for (int i = 0; i < datos.size(); i++) {
 			Object[] filaActual = (Object[]) datos.get(i); // Acceso a una fila
 			System.out.printf("%13s %10s %30s %30s %30s %n",filaActual[0],filaActual[1],filaActual[2],filaActual[3],filaActual[4]);
+		}
+		session.close();
+	}
+	private static void consulta2() {
+		Session session=factory.openSession();
+		String hql="select c.codigociclista, c.nombreciclista, e.codigoetapa, e.tipoetapa, t.codigotramo, t.nombretramo, t.categoria\r\n"
+				+ "from Ciclistas c join c.etapases e join c.tramospuertoses t\r\n"
+				+ "where t.pendiente like '%5,5%'\r\n"
+				+ "order by c.codigociclista,e.codigoetapa";
+		Query cons = session.createQuery(hql,Object.class);
+		List datos = cons.list();
+		System.out.println("CONSULTA 2");
+		System.out.printf("%13s %30s %30s %30s %30s %30s %30s %n","CODIGOCICLISTA","NOMBRECICLISTA","CODETAPA","TIPO","CODTRAMO","NOMBRETRAMO","CATEGORIA");
+		System.out.printf("%13s %30s %30s %30s %30s %30s %30s %n","-------------","------------------------------","------------------------------","------------------------------","------------------------------","------------------------------","------------------------------");
+		for (int i = 0; i < datos.size(); i++) {
+			Object[] filaActual = (Object[]) datos.get(i); // Acceso a una fila
+			System.out.printf("%13s %30s %30s %30s %30s %30s %30s %n",filaActual[0],filaActual[1],filaActual[2],filaActual[3],filaActual[4],filaActual[5],filaActual[6]);
 		}
 		session.close();
 	}
