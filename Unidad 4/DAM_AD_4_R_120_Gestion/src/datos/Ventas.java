@@ -6,12 +6,13 @@ public class Ventas {
 	private Articulos codarti;
     private Clientes numcli ;
 	private int univen; 
-	private String fecha; 
+	private String fecha;
+	private float importe;
+	private float precioFinal;
 
 	public Ventas(){}
 	
-	public Ventas(int codventa, Articulos codarti, Clientes numcli, int univen,
-			String fecha) {
+	public Ventas(int codventa, Articulos codarti, Clientes numcli, int univen,String fecha) {
 		super();
 		this.codventa = codventa;
 		this.codarti = codarti;
@@ -59,6 +60,20 @@ public class Ventas {
 	public void setFecha(String fecha) {
 		this.fecha = fecha;
 	}
-	
-	
+
+	public float getImporte() {
+		return importe;
+	}
+
+	public void setImporte(float importe) {
+		this.importe = importe;
+	}
+
+	public float getPrecioFinal() {
+		return precioFinal;
+	}
+
+	public void setPrecioFinal(float precioFinal) {
+		this.precioFinal = precioFinal;
+	}
 }

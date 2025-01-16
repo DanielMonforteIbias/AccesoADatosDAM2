@@ -329,8 +329,8 @@ public void visualizararticulos() {
     {  
 	 textArea.setText(" "); // limpiamos el textarea
 	
-	 textArea.append("CODARTI DENOMINACION            PVP        DESCUENTO   STOCK     SUMAUNIDADES  DIFERENCIA  IMPORTE      \n");
-	 textArea.append("======= ======================= ========== =========   ========= ============ ============ ==========    \n");
+	 textArea.append("CODARTI DENOMINACION            PVP             DESCUENTO      STOCK     SUMAUNIDADES  DIFERENCIA  IMPORTE      \n");
+	 textArea.append("======= ======================= ==========      =========      ========= ============ ============ ==========    \n");
 	 int totstock=0, totuni=0, totstockact=0;
 	 float totim=0, maximpor=0;
 	 int maxuni=0, contmaxim=0, contmaxuni=0;
@@ -343,7 +343,7 @@ public void visualizararticulos() {
 		 BigDecimal unidades = (BigDecimal) ov.getByAlias("univen");
 		 float impor = art.getPvp() * unidades.floatValue();
 		 int stcac = art.getStock() - unidades.intValue();
-	     String cad=String.format("%7d %-23s %8.2f %3.2f %10d %8d %15d %12.2f %n", art.getCodarti(), art.getDenom(), art.getPvp(), art.getDescuento(),art.getStock(),
+	     String cad=String.format("%7d %-23s %8.2f %5.2f %10d %8d %15d %12.2f %n", art.getCodarti(), art.getDenom(), art.getPvp(), art.getDescuento(),art.getStock(),
 	    		 unidades.intValue(), stcac, impor );
 	     textArea.append(cad); 
 	     totuni = totuni + unidades.intValue();
