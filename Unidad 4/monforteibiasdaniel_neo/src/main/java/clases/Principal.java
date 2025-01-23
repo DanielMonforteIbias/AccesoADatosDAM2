@@ -28,7 +28,11 @@ public class Principal {
 				crearBD();
 				break;
 			case 2:
-				listarProyecto(1);
+				listarProyecto(1); //Existe y tiene participantes
+				System.out.println();
+				listarProyecto(15); //Existe y no participantes
+				System.out.println();
+				listarProyecto(999); //No existe
 				break;
 			case 3:
 				break;
@@ -45,92 +49,134 @@ public class Principal {
 	}
 
 	public static void mostrarMenu() {
+		System.out.println();
 		System.out.println("OPERACIONES PROYECTOS");
 		System.out.println("1. Crear BD");
 		System.out.println("2. Listar un proyecto");
 		System.out.println("3. Insertar participacion");
 		System.out.println("0. Salir");
+		System.out.println();
 	}
 
 	public static void crearBD() {
 		ODB odb = ODBFactory.open("proyectos.dat");// Abrir BD
 		try {
-			String sql = "select * from proyectos";
-			PreparedStatement sentencia = conexion.prepareStatement(sql);
-			ResultSet resul = sentencia.executeQuery();
-			while (resul.next()) {
-				int codigoProyecto = resul.getInt(1);
-				String nombre = resul.getString(2);
-				Date fechaInicio = resul.getDate(3);
-				Date fechaFin = resul.getDate(4);
-				float presupuesto = resul.getFloat(5);
-				float extraAportacion = resul.getFloat(6);
-				odb.store(new Proyectos(codigoProyecto, nombre, fechaInicio, fechaFin, presupuesto, extraAportacion,
-						new ArrayList<Participa>()));
+			//VARIABLES PARA OBTENER LOS PROYECTOS DE LA BD DE ORACLE
+			//Proyectos
+			String sqlProyectos = "select * from proyectos";
+			PreparedStatement sentencia = conexion.prepareStatement(sqlProyectos);
+			ResultSet resulProyectos = sentencia.executeQuery();
+			
+			//Estudiantes
+			String sqlEstudiantes = "select * from estudiantes";
+			sentencia = conexion.prepareStatement(sqlEstudiantes);
+			ResultSet resulEstudiantes = sentencia.executeQuery();
+			
+			//Participa
+			String sqlParticipa = "select * from participa";
+			sentencia = conexion.prepareStatement(sqlParticipa);
+			ResultSet resulParticipa = sentencia.executeQuery();
+			//Mientras haya registros en el resultado de proyectos
+			while (resulProyectos.next()) { 
+				int codigoProyecto = resulProyectos.getInt(1);
+				Objects<Proyectos> proyectos = odb.getObjects(new CriteriaQuery(Proyectos.class, Where.equal("codigoproyecto", codigoProyecto))); //Obtenemos los proyectos que tengan el codigo de proyecto de la participacion (habrá 1 como mucho)
+				if (proyectos.size()==0) { //Si aun no existe un proyecto con ese codigo
+					String nombre = resulProyectos.getString(2);
+					Date fechaInicio = resulProyectos.getDate(3);
+					Date fechaFin = resulProyectos.getDate(4);
+					float presupuesto = resulProyectos.getFloat(5);
+					float extraAportacion = resulProyectos.getFloat(6);
+					ArrayList<Participa> participaciones=new ArrayList<Participa>();
+					odb.store(new Proyectos(codigoProyecto, nombre, fechaInicio, fechaFin, presupuesto, extraAportacion,participaciones)); //Añadimos el proyecto a la base de datos
+				}
 			}
-			sql = "select * from estudiantes";
-			sentencia = conexion.prepareStatement(sql);
-			resul = sentencia.executeQuery();
-			while (resul.next()) {
-				int codigoEstudiante = resul.getInt(1);
-				String nombre = resul.getString(2);
-				String direccion = resul.getString(3);
-				String tlfn = resul.getString(4);
-				Date fechaAlta = resul.getDate(5);
-				odb.store(new Estudiantes(codigoEstudiante, nombre, direccion, tlfn, fechaAlta,
-						new ArrayList<Participa>()));
+				
+			
+			//Mientras haya registros en el resultado de estudiantes
+			while (resulEstudiantes.next()) {
+				//Obtenemos los datos del estudiante
+				int codigoEstudiante = resulEstudiantes.getInt(1);
+				Objects<Estudiantes> estudiantes = odb.getObjects(new CriteriaQuery(Estudiantes.class, Where.equal("codestudiante", codigoEstudiante)));//Obtenemos los estudiantes que tengan el codigo de estudiante de la participacion (habrá 1 como mucho)
+				if (estudiantes.size() == 0) {//Si aun no existe un estudiante con ese codigo, lo guardamos
+					String nombre = resulEstudiantes.getString(2);
+					String direccion = resulEstudiantes.getString(3);
+					String tlfn = resulEstudiantes.getString(4);
+					Date fechaAlta = resulEstudiantes.getDate(5);
+					ArrayList<Participa>participantes=new ArrayList<Participa>(); //La dejamos vacia de momento
+					odb.store(new Estudiantes(codigoEstudiante, nombre, direccion, tlfn, fechaAlta,participantes)); //Añadimos el estudiante a la base de datos
+				}
 			}
-			sql = "select * from participa";
-			sentencia = conexion.prepareStatement(sql);
-			resul = sentencia.executeQuery();
-			while (resul.next()) {
-				int codigoParticipacion = resul.getInt(1);
-				String tipoParticipacion = resul.getString(4);
-				int numAportaciones = resul.getInt(5);
-				odb.store(new Participa(codigoParticipacion, new Estudiantes(), new Proyectos(), tipoParticipacion,
-						numAportaciones));
+			
+			
+			//Mientras haya registros en el resultado de participa
+			while (resulParticipa.next()) {
+				//Obtenemos los datos del registro
+				int codigoParticipacion = resulParticipa.getInt(1);
+				Objects<Participa> participaciones = odb.getObjects(new CriteriaQuery(Participa.class, Where.equal("codparticipacion", codigoParticipacion)));//Obtenemos los estudiantes que tengan el codigo de estudiante de la participacion (habrá 1 como mucho)
+				if (participaciones.size()==0) {//Si aun no existe un participante con ese codigo, la guardamos 
+					int codigoEstudiante=resulParticipa.getInt(2);
+					int codigoProyecto=resulParticipa.getInt(3);
+					String tipoParticipacion = resulParticipa.getString(4);
+					int numAportaciones = resulParticipa.getInt(5);
+					Estudiantes estudiante=null; //Creamos un objeto estudiante, de momento a null
+					Proyectos proyecto=null; //Creamos un objeto proyecto, de momento a null
+					Objects<Proyectos> proyectos = odb.getObjects(new CriteriaQuery(Proyectos.class, Where.equal("codigoproyecto", codigoProyecto))); //Obtenemos los proyectos que tengan el codigo de proyecto de la participacion (habrá 1 como mucho)
+					if (proyectos.size() > 0) proyecto=proyectos.getFirst(); //Si existe, lo guardamos
+					Objects<Estudiantes> estudiantes = odb.getObjects(new CriteriaQuery(Estudiantes.class, Where.equal("codestudiante", codigoEstudiante)));//Obtenemos los estudiantes que tengan el codigo de estudiante de la participacion (habrá 1 como mucho)
+					if (estudiantes.size() > 0) estudiante=estudiantes.getFirst(); //Si existe, lo guardamos
+					if(estudiante!=null && proyecto!=null) { //Si existen el estudiante y el proyecto, i
+						Participa p=new Participa(codigoParticipacion, estudiante,proyecto, tipoParticipacion,numAportaciones); 
+						odb.store(p); //Insertamos la participacion
+						//Añadimos la participacion a la lista de participaciones del estudiante y el proyecto
+						estudiante.getParticipaen().add(p);
+						proyecto.getParticipantes().add(p);
+						//Actualizamos el estudiante y el proyecto en la base de datos
+						odb.store(estudiante);
+						odb.store(proyecto);
+					}
+					else System.out.println("Error en el registro "+resulParticipa.getRow()+", no se inserta");
+				}
 			}
+			
 			odb.commit();
-			resul.close();
+			resulParticipa.close();
+			resulEstudiantes.close();
+			resulProyectos.close();
 			sentencia.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		System.out.println("Base de datos creada");
 		odb.close();
 	}
 
 	public static void listarProyecto(int codigoProyecto) {
 		ODB odb = ODBFactory.open("proyectos.dat");// Abrir BD
-		Objects<Proyectos> objects = odb
-				.getObjects(new CriteriaQuery(Proyectos.class, Where.equal("codigoproyecto", codigoProyecto)));
+		Objects<Proyectos> objects = odb.getObjects(new CriteriaQuery(Proyectos.class, Where.equal("codigoproyecto", codigoProyecto)));
 		if (objects.size() > 0) {
 			Proyectos proyecto = objects.getFirst();
 			System.out.println("--------------------------------------------------------------------------");
-			System.out.println(
-					"Codigo de proyecto: " + proyecto.getCodigoproyecto() + "   Nombre: " + proyecto.getNombre());
-			System.out
-					.println("Fecha inicio: " + proyecto.getFechainicio() + "   Fecha fin: " + proyecto.getFechafin());
-			System.out.println("Presupuesto: " + proyecto.getPresupuesto() + "   Extraaportacion: "
-					+ proyecto.getExtraaportacion());
+			System.out.println("Codigo de proyecto: " + proyecto.getCodigoproyecto() + "   Nombre: " + proyecto.getNombre());
+			System.out.println("Fecha inicio: " + proyecto.getFechainicio() + "   Fecha fin: " + proyecto.getFechafin());
+			System.out.println("Presupuesto: " + proyecto.getPresupuesto() + "   Extraaportacion: "+ proyecto.getExtraaportacion());
 			System.out.println("--------------------------------------------------------------------------");
 			System.out.println("Participantes en el proyecto: ");
 			System.out.println("---------------------------------------------");
 			if (proyecto.getParticipantes().size() > 0) {
-				System.out.printf("%16s %13s %30s %20s %20s %10s", "CODPARTICIPACION", "CODESTUDIANTE",
-						"NOMBREESTUDIANTE", "TIPOAPORTACION", "NUMAPORTACIONES", "IMPORTE");
-				System.out.printf("%16s %13s %30s %20s %20s %10s", "----------------", "-------------",
-						"------------------------------", "--------------------", "--------------------", "----------");
+				System.out.printf("%16s %13s %30s %20s %20s %10s %n", "CODPARTICIPACION", "CODESTUDIANTE","NOMBREESTUDIANTE", "TIPOAPORTACION", "NUMAPORTACIONES", "IMPORTE");
+				System.out.printf("%16s %13s %30s %20s %20s %10s%n", "----------------", "-------------","------------------------------", "--------------------", "--------------------", "----------");
 				int totalNumAportaciones = 0;
 				double totalImporte = 0;
 				for (Participa p : proyecto.getParticipantes()) {
 					Estudiantes e = p.getEstudiante();
 					double importe = p.getNumaportaciones() * proyecto.getExtraaportacion();
-					System.out.printf("%16s %13s %30s %20s %20s %10s", p.getCodparticipacion(), e.getCodestudiante(),
+					System.out.printf("%16s %13s %30s %20s %20s %10s %n", p.getCodparticipacion(), e.getCodestudiante(),
 							e.getNombre(), p.getTipoparticipacion(), p.getNumaportaciones(), importe);
 					totalNumAportaciones += p.getNumaportaciones();
 					totalImporte += importe;
 				}
-				System.out.printf("%16s %13s %30s %20s %20s %10s", "TOTALES:", "", "", "", totalNumAportaciones,
+				System.out.printf("%16s %13s %30s %20s %20s %10s%n", "----------------", "-------------","------------------------------", "--------------------", "--------------------", "----------");
+				System.out.printf("%16s %13s %30s %20s %20s %10s %n", "TOTALES:", "", "", "", totalNumAportaciones,
 						totalImporte);
 			} else
 				System.out.println("(No hay participantes)");
