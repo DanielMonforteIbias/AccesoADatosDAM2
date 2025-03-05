@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="4.0"
+	xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+	xmlns:javaee="http://xmlns.jcp.org/xml/ns/javaee"
+	xmlns:xml="http://www.w3.org/XML/1998/namespace"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd">
+	<display-name>Archetype Created Web Application</display-name>
+
+	<servlet>
+		<servlet-name>ServletONE</servlet-name>
+		<display-name>ServletONE</display-name>
+		<description>ut6-maven-servlets</description>
+		<servlet-class>paquete</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>ServletONE</servlet-name>
+		<url-pattern>/ut6-maven-servlets/ServletONE</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>ServletTWO</servlet-name>
+		<display-name>ServletTWO</display-name>
+		<description>ut6-maven-servlets</description>
+		<servlet-class>paquete</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>ServletTWO</servlet-name>
+		<url-pattern>/ut6-maven-servlets/ServletTWO</url-pattern>
+	</servlet-mapping>
+
+</web-app>
